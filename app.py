@@ -82,4 +82,4 @@ def handle_reset():
     emit('update_board', {"board": board, "current_player": current_player}, room="game")
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000)
