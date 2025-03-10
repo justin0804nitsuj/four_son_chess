@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多人連線四子棋</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.js"></script>
+</head>
+<body>
+    <h1>多人連線四子棋</h1>
+    <h2 id="player-info"></h2>
+    <h3 id="turn-info"></h3>
+    <div id="game-board"></div>
+    <button id="reset-button" onclick="resetGame()">連點3下以重新開始</button>
+
+    <script src="{{ url_for('static', filename='game.js') }}"></script>
+</body>
+</html>
