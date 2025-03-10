@@ -38,9 +38,9 @@ def index():
     return render_template('index.html')
 
 @socketio.on('connect')
-def handle_connect():
+def handle_connect(sid):
+    """當玩家連接時"""
     global players
-    sid = request.sid
 
     if len(players) < 2:
         players[sid] = 1 if len(players) == 0 else 2
@@ -48,14 +48,15 @@ def handle_connect():
         emit('player_number', {"player": players[sid]}, room=sid)
         print(f"玩家 {players[sid]} 連接，ID: {sid}")
     else:
-        emit('spectator', room=sid)
+        emit('spectator', room=sid)  # 超過 2 人的變成觀戰者
 
+    # 發送最新的棋盤給所有玩家
     emit('update_board', {"board": board, "current_player": current_player}, room="game")
 
 @socketio.on('disconnect')
-def handle_disconnect():
+def handle_disconnect(sid):
+    """當玩家斷線時"""
     global players, current_player
-    sid = request.sid
 
     if sid in players:
         player_num = players[sid]
@@ -69,12 +70,12 @@ def handle_disconnect():
         emit('player_left', {"player": player_num, "current_player": current_player}, room="game")
 
 @socketio.on('drop_piece')
-def handle_drop_piece(data):
+def handle_drop_piece(sid, data):
+    """當玩家落子時"""
     global current_player, game_over
     if game_over:
         return
     
-    sid = request.sid
     if players.get(sid) != current_player:
         emit('invalid_move', {"message": "不是你的回合"}, room=sid)
         return
@@ -95,6 +96,7 @@ def handle_drop_piece(data):
 
 @socketio.on('reset_game')
 def handle_reset():
+    """重新開始遊戲"""
     global board, current_player, game_over
     board = [[0] * COLS for _ in range(ROWS)]
     current_player = 1
