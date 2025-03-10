@@ -8,6 +8,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 ROWS, COLS = 6, 7
 board = [[0] * COLS for _ in range(ROWS)]
 players = {}  # 存放玩家 socket ID
+player_slots = {1: None, 2: None}  # 追蹤哪個玩家在哪個位置
 current_player = 1  # 當前回合玩家
 game_over = False
 
@@ -38,15 +39,26 @@ def index():
     return render_template('index.html')
 
 @socketio.on('connect')
-def handle_connect(sid):
+def handle_connect():
     """當玩家連接時"""
-    global players
+    global players, player_slots
 
-    if len(players) < 2:
-        players[sid] = 1 if len(players) == 0 else 2
+    sid = request.sid  # 取得玩家的 session ID
+
+    # 分配玩家 1 或 玩家 2
+    assigned_player = None
+    if player_slots[1] is None:
+        player_slots[1] = sid
+        assigned_player = 1
+    elif player_slots[2] is None:
+        player_slots[2] = sid
+        assigned_player = 2
+
+    if assigned_player:
+        players[sid] = assigned_player
         join_room("game")
-        emit('player_number', {"player": players[sid]}, room=sid)
-        print(f"玩家 {players[sid]} 連接，ID: {sid}")
+        emit('player_number', {"player": assigned_player}, room=sid)
+        print(f"玩家 {assigned_player} 連接，ID: {sid}")
     else:
         emit('spectator', room=sid)  # 超過 2 人的變成觀戰者
 
@@ -54,13 +66,16 @@ def handle_connect(sid):
     emit('update_board', {"board": board, "current_player": current_player}, room="game")
 
 @socketio.on('disconnect')
-def handle_disconnect(sid):
+def handle_disconnect():
     """當玩家斷線時"""
-    global players, current_player
+    global players, player_slots, current_player
+
+    sid = request.sid  # 取得離線的玩家 session ID
 
     if sid in players:
         player_num = players[sid]
         del players[sid]
+        player_slots[player_num] = None  # 釋放該玩家的位置
         print(f"玩家 {player_num} 離開，釋放位置")
 
         # 如果當前玩家離開，自動換對手回合
@@ -70,12 +85,13 @@ def handle_disconnect(sid):
         emit('player_left', {"player": player_num, "current_player": current_player}, room="game")
 
 @socketio.on('drop_piece')
-def handle_drop_piece(sid, data):
+def handle_drop_piece(data):
     """當玩家落子時"""
     global current_player, game_over
     if game_over:
         return
     
+    sid = request.sid  # 取得當前落子的玩家 session ID
     if players.get(sid) != current_player:
         emit('invalid_move', {"message": "不是你的回合"}, room=sid)
         return
