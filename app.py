@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
 app = Flask(__name__)
@@ -43,7 +43,7 @@ def handle_connect():
     """當玩家連接時"""
     global players, player_slots
 
-    sid = request.sid  # 取得玩家的 session ID
+    sid = request.sid  # ✅ 修正這裡，從 request.sid 獲取 session ID
 
     # 分配玩家 1 或 玩家 2
     assigned_player = None
@@ -70,7 +70,7 @@ def handle_disconnect():
     """當玩家斷線時"""
     global players, player_slots, current_player
 
-    sid = request.sid  # 取得離線的玩家 session ID
+    sid = request.sid  # ✅ 修正這裡，從 request.sid 獲取 session ID
 
     if sid in players:
         player_num = players[sid]
@@ -91,7 +91,7 @@ def handle_drop_piece(data):
     if game_over:
         return
     
-    sid = request.sid  # 取得當前落子的玩家 session ID
+    sid = request.sid  # ✅ 修正這裡，從 request.sid 獲取 session ID
     if players.get(sid) != current_player:
         emit('invalid_move', {"message": "不是你的回合"}, room=sid)
         return
