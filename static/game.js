@@ -1,8 +1,6 @@
 const socket = io();
 let playerNumber = 0;
 let currentTurn = 1;
-let resetClickCount = 0;
-let resetTimer = null;
 
 socket.on("player_number", (data) => {
     playerNumber = data.player;
@@ -27,6 +25,10 @@ socket.on("invalid_move", (data) => {
     alert(data.message);
 });
 
+socket.on("player_left", (data) => {
+    alert(`玩家 ${data.player} 已離開！\n現在輪到玩家 ${data.current_player}。`);
+});
+
 function dropPiece(col) {
     if (playerNumber !== currentTurn) {
         alert("現在不是你的回合！");
@@ -36,27 +38,7 @@ function dropPiece(col) {
 }
 
 function resetGame() {
-    resetClickCount++;
-
-    // 更新按鈕顯示點擊次數
-    let resetButton = document.getElementById("reset-button");
-    resetButton.innerText = `連點 ${3 - resetClickCount} 下以重新開始`;
-
-    // 若是第一次點擊，啟動 2 秒計時器
-    if (resetClickCount === 1) {
-        resetTimer = setTimeout(() => {
-            resetClickCount = 0;
-            resetButton.innerText = "連點3下以重新開始";
-        }, 2000);
-    }
-
-    // 當點擊次數達到 3 次，執行重置
-    if (resetClickCount >= 3) {
-        clearTimeout(resetTimer);
-        resetClickCount = 0;
-        resetButton.innerText = "連點3下以重新開始";
-        socket.emit("reset_game");
-    }
+    socket.emit("reset_game");
 }
 
 function updateTurnInfo() {
